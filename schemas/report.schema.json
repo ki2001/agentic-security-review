@@ -25,7 +25,9 @@
       "enum": [
         "static",
         "diff",
-        "threat-model-guided"
+        "threat-model-guided",
+        "patch-review",
+        "multi-agent"
       ]
     },
     "summary": {

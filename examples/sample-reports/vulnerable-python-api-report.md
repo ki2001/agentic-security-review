@@ -71,9 +71,46 @@ if not invoice or invoice["org_id"] != user["org_id"]:
 - Supplying `org_id` in the query string is ignored.
 - Invoice lookup uses server-side session organization only.
 
-## Other intentionally vulnerable patterns to review
+### ASR-002: Download endpoint permits path traversal outside reports directory
 
-- Path traversal in `/download` via unsanitized filename.
-- Command injection risk in `/resize` via unsafe `os.system` string interpolation.
-- Hardcoded Flask `SECRET_KEY`.
-- `debug=True` in app startup.
+- Severity: high
+- Confidence: high
+- Category: path traversal
+- CWE: CWE-22
+- OWASP: A01:2021-Broken Access Control
+- Affected file: `examples/vulnerable-python-api/app.py`
+
+The `/download` route passes `os.path.join("reports", name)` to `send_file` with user-controlled `name`. Resolve paths against an absolute reports directory and reject any request that escapes it.
+
+### ASR-003: Hardcoded Flask secret key in source
+
+- Severity: medium
+- Confidence: high
+- Category: hardcoded secret
+- CWE: CWE-798
+- OWASP: A02:2021-Cryptographic Failures
+- Affected file: `examples/vulnerable-python-api/app.py`
+
+`SECRET_KEY` is committed as `dev-secret-do-not-use`. Load secrets from environment/secret manager and fail closed outside local development.
+
+### ASR-004: Debug mode enabled in application entry point
+
+- Severity: medium
+- Confidence: high
+- Category: debug mode
+- CWE: CWE-489
+- OWASP: A05:2021-Security Misconfiguration
+- Affected file: `examples/vulnerable-python-api/app.py`
+
+`app.run(debug=True)` should never be copied into production-like contexts. Use environment-specific configuration and keep debug disabled by default.
+
+### ASR-005: Unsafe shell command construction in image resize endpoint
+
+- Severity: critical
+- Confidence: high
+- Category: command injection
+- CWE: CWE-78
+- OWASP: A03:2021-Injection
+- Affected file: `examples/vulnerable-python-api/app.py`
+
+The `/resize` route interpolates JSON `filename` into `os.system(...)`. Avoid shell invocation; use a library API or `subprocess.run([...], shell=False)` with strict filename validation.

@@ -1,0 +1,50 @@
+name: agentic-security-review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  prepare-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install package
+        run: pip install -e '.[dev]'
+      - name: Prepare patch context
+        if: github.event_name == 'pull_request'
+        run: |
+          git diff --no-ext-diff --unified=40 origin/${{ github.base_ref }}...HEAD > patch.diff
+      - name: Generate review prompt artifact
+        run: |
+          MODE="single-agent"
+          PATCH_ARG=""
+          if [ -f patch.diff ]; then
+            MODE="patch-review"
+            PATCH_ARG="--patch patch.diff"
+          fi
+          python scripts/run_review.py . --agent codex --authorized --mode "$MODE" $PATCH_ARG > agentic-security-review-prompt.md
+      - name: Upload prompt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentic-security-review-prompt
+          path: agentic-security-review-prompt.md
+      - name: Validate sample report and export SARIF
+        run: |
+          python scripts/validate_report.py examples/sample-reports/vulnerable-python-api-report.json
+          python scripts/export_sarif.py examples/sample-reports/vulnerable-python-api-report.json --output sample.sarif
+      - name: Upload sample SARIF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sample-sarif
+          path: sample.sarif

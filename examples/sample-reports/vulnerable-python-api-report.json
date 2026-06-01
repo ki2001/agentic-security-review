@@ -11,20 +11,255 @@
       "severity": "high",
       "confidence": "high",
       "category": "broken_access_control",
-      "cwe": ["CWE-639"],
-      "owasp": ["A01:2021-Broken Access Control"],
-      "affected_files": [{"path": "examples/vulnerable-python-api/app.py", "lines": [22, 28]}],
+      "cwe": [
+        "CWE-639"
+      ],
+      "owasp": [
+        "A01:2021-Broken Access Control"
+      ],
+      "affected_files": [
+        {
+          "path": "examples/vulnerable-python-api/app.py",
+          "lines": [
+            22,
+            28
+          ]
+        }
+      ],
       "summary": "The invoice endpoint trusts org_id from the query string instead of deriving authorization from the authenticated user.",
       "impact": "An authenticated user may retrieve invoices belonging to another organization if they know or guess invoice identifiers and organization IDs.",
       "exploitability": {
-        "preconditions": ["Attacker can access the invoice endpoint", "Attacker can guess or enumerate invoice IDs"],
-        "attack_path": ["Authenticate as a normal user", "Request /invoices/inv_2?org_id=org_b", "Receive invoice data for org_b"],
+        "preconditions": [
+          "Attacker can access the invoice endpoint",
+          "Attacker can guess or enumerate invoice IDs"
+        ],
+        "attack_path": [
+          "Authenticate as a normal user",
+          "Request /invoices/inv_2?org_id=org_b",
+          "Receive invoice data for org_b"
+        ],
         "safe_reproduction": "Run only against the local deliberately vulnerable demo app with seeded demo data."
       },
-      "evidence": [{"path": "examples/vulnerable-python-api/app.py", "snippet": "org_id = request.args.get(\"org_id\")", "reasoning": "Organization scope is taken from user-controlled query parameters and compared to invoice data rather than to the authenticated session."}],
+      "evidence": [
+        {
+          "path": "examples/vulnerable-python-api/app.py",
+          "snippet": "org_id = request.args.get(\"org_id\")",
+          "reasoning": "Organization scope is taken from user-controlled query parameters and compared to invoice data rather than to the authenticated session."
+        }
+      ],
       "recommended_fix": "Derive org_id from current_user() or server-side session claims and enforce the invoice lookup with that trusted organization ID.",
-      "suggested_tests": ["User from org_a cannot access inv_2", "Supplying org_id in the query string is ignored"],
-      "references": ["https://cwe.mitre.org/data/definitions/639.html"]
+      "suggested_tests": [
+        "User from org_a cannot access inv_2",
+        "Supplying org_id in the query string is ignored"
+      ],
+      "references": [
+        "https://cwe.mitre.org/data/definitions/639.html"
+      ]
+    },
+    {
+      "id": "ASR-002",
+      "title": "Download endpoint permits path traversal outside reports directory",
+      "severity": "high",
+      "confidence": "high",
+      "category": "path_traversal",
+      "cwe": [
+        "CWE-22"
+      ],
+      "owasp": [
+        "A01:2021-Broken Access Control"
+      ],
+      "affected_files": [
+        {
+          "path": "examples/vulnerable-python-api/app.py",
+          "lines": [
+            27,
+            31
+          ]
+        }
+      ],
+      "summary": "The download route joins a user-controlled filename to the reports directory without normalization or allowlist checks.",
+      "impact": "A local demo user can request paths such as ../app.py and read files outside the intended reports directory if the process can access them.",
+      "exploitability": {
+        "preconditions": [
+          "Attacker can reach the local demo download endpoint",
+          "Target file is readable by the Flask process"
+        ],
+        "attack_path": [
+          "Request /download?name=../app.py",
+          "send_file receives reports/../app.py",
+          "The app returns a file outside the reports directory"
+        ],
+        "safe_reproduction": "Run only against the local deliberately vulnerable demo app with toy files."
+      },
+      "evidence": [
+        {
+          "path": "examples/vulnerable-python-api/app.py",
+          "snippet": "return send_file(os.path.join(\"reports\", name))",
+          "reasoning": "User input is appended to a base directory without resolving and enforcing that the final path remains inside the allowed directory."
+        }
+      ],
+      "recommended_fix": "Resolve the requested path, enforce that it stays under an absolute reports directory, and preferably serve only allowlisted report IDs.",
+      "suggested_tests": [
+        "../app.py is rejected",
+        "Absolute paths are rejected",
+        "Valid report filenames still download"
+      ],
+      "references": [
+        "https://cwe.mitre.org/data/definitions/22.html"
+      ]
+    },
+    {
+      "id": "ASR-003",
+      "title": "Hardcoded Flask secret key in source",
+      "severity": "medium",
+      "confidence": "high",
+      "category": "hardcoded_secret",
+      "cwe": [
+        "CWE-798"
+      ],
+      "owasp": [
+        "A02:2021-Cryptographic Failures"
+      ],
+      "affected_files": [
+        {
+          "path": "examples/vulnerable-python-api/app.py",
+          "lines": [
+            5
+          ]
+        }
+      ],
+      "summary": "The Flask SECRET_KEY is committed as a static development value.",
+      "impact": "If copied into a real deployment, attackers who know the key may forge or tamper with signed Flask session data.",
+      "exploitability": {
+        "preconditions": [
+          "Application uses Flask signed sessions or related signing",
+          "The hardcoded key is deployed"
+        ],
+        "attack_path": [
+          "Read the public source",
+          "Recover the static secret",
+          "Forge signed application data"
+        ],
+        "safe_reproduction": "Treat this as static evidence only; do not attempt to forge sessions on systems you do not own."
+      },
+      "evidence": [
+        {
+          "path": "examples/vulnerable-python-api/app.py",
+          "snippet": "app.config[\"SECRET_KEY\"] = \"dev-secret-do-not-use\"",
+          "reasoning": "Secret material is embedded directly in source code rather than loaded from a deployment secret store."
+        }
+      ],
+      "recommended_fix": "Load SECRET_KEY from environment or a secret manager and fail closed if it is absent in non-development environments.",
+      "suggested_tests": [
+        "Application refuses to start in production without SECRET_KEY",
+        "Development defaults cannot be used when FLASK_ENV=production"
+      ],
+      "references": [
+        "https://cwe.mitre.org/data/definitions/798.html"
+      ]
+    },
+    {
+      "id": "ASR-004",
+      "title": "Debug mode enabled in application entry point",
+      "severity": "medium",
+      "confidence": "high",
+      "category": "debug_mode",
+      "cwe": [
+        "CWE-489"
+      ],
+      "owasp": [
+        "A05:2021-Security Misconfiguration"
+      ],
+      "affected_files": [
+        {
+          "path": "examples/vulnerable-python-api/app.py",
+          "lines": [
+            42,
+            43
+          ]
+        }
+      ],
+      "summary": "The app starts Flask with debug=True, which is unsafe outside a local demo environment.",
+      "impact": "If copied into deployment, debug mode may expose interactive debugger behavior, stack traces, environment details, and unsafe development settings.",
+      "exploitability": {
+        "preconditions": [
+          "The development server is exposed beyond localhost or copied into deployment",
+          "An exception or debugger route is reachable"
+        ],
+        "attack_path": [
+          "Trigger an application error",
+          "Inspect debug output or debugger exposure",
+          "Use leaked details to deepen compromise"
+        ],
+        "safe_reproduction": "Do not expose Flask debug mode publicly; verify statically or on a private local demo only."
+      },
+      "evidence": [
+        {
+          "path": "examples/vulnerable-python-api/app.py",
+          "snippet": "app.run(debug=True)",
+          "reasoning": "Debug mode is explicitly enabled in the application entry point."
+        }
+      ],
+      "recommended_fix": "Use environment-specific configuration and ensure debug is disabled by default and in all production-like contexts.",
+      "suggested_tests": [
+        "Production config sets debug false",
+        "Entrypoint reads debug setting from explicit local-only env flag"
+      ],
+      "references": [
+        "https://cwe.mitre.org/data/definitions/489.html"
+      ]
+    },
+    {
+      "id": "ASR-005",
+      "title": "Unsafe shell command construction in image resize endpoint",
+      "severity": "critical",
+      "confidence": "high",
+      "category": "command_injection",
+      "cwe": [
+        "CWE-78"
+      ],
+      "owasp": [
+        "A03:2021-Injection"
+      ],
+      "affected_files": [
+        {
+          "path": "examples/vulnerable-python-api/app.py",
+          "lines": [
+            34,
+            38
+          ]
+        }
+      ],
+      "summary": "The resize endpoint interpolates a JSON filename into an os.system command string.",
+      "impact": "If reachable in a real service, attacker-controlled filename content could alter shell command execution under the application user.",
+      "exploitability": {
+        "preconditions": [
+          "Attacker can POST JSON to /resize",
+          "The app runs the endpoint on a host with shell access to convert"
+        ],
+        "attack_path": [
+          "Submit crafted filename metacharacters",
+          "Shell parses injected syntax in os.system",
+          "Application executes unintended command segments"
+        ],
+        "safe_reproduction": "Use only static review or a disposable local demo; do not provide deployable payloads or run against third-party systems."
+      },
+      "evidence": [
+        {
+          "path": "examples/vulnerable-python-api/app.py",
+          "snippet": "os.system(f\"convert uploads/{filename} -resize 100x100 /tmp/out.png\")",
+          "reasoning": "User-controlled filename flows into shell=True-like command execution through os.system without argument separation or validation."
+        }
+      ],
+      "recommended_fix": "Avoid shell invocation. Use a library API or subprocess.run with a list of fixed arguments, validate filenames, and confine file access to an uploads directory.",
+      "suggested_tests": [
+        "Filenames containing shell metacharacters are rejected",
+        "Resize uses argument list or library call",
+        "Output path is fixed and not user-controlled"
+      ],
+      "references": [
+        "https://cwe.mitre.org/data/definitions/78.html"
+      ]
     }
   ]
 }

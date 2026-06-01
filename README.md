@@ -25,7 +25,9 @@ This project packages a repeatable agent workflow so reviews are safer, more con
 - Generates maintainer-friendly reports with evidence and remediation guidance.
 - Defines JSON schemas for normalized findings and reports.
 - Includes a deliberately vulnerable demo app and sample reports.
-- Provides a small CLI for prompt generation and schema validation.
+- Provides CLIs for prompt generation, schema validation, SARIF export, optional scanner context, and benchmark scoring.
+- Supports single-agent, multi-agent, and patch-review modes.
+- Includes a GitHub Actions workflow that prepares PR/diff review prompts and exports sample SARIF artifacts.
 
 ## What it is not
 
@@ -66,6 +68,31 @@ Validate a JSON report:
 
 ```bash
 python scripts/validate_report.py examples/sample-reports/vulnerable-python-api-report.json
+```
+
+Export SARIF for GitHub code scanning or downstream tooling:
+
+```bash
+python scripts/export_sarif.py examples/sample-reports/vulnerable-python-api-report.json --output /tmp/asr.sarif
+```
+
+Run multi-agent or patch-review prompt preparation:
+
+```bash
+python scripts/run_review.py examples/vulnerable-python-api --agent codex --authorized --mode multi-agent
+python scripts/run_review.py . --agent codex --authorized --mode patch-review --patch patch.diff
+```
+
+Collect optional local scanner context without requiring scanner installs:
+
+```bash
+python scripts/collect_scanner_context.py . > /tmp/asr-scanner-context.json
+```
+
+Score a report against the demo benchmark manifest:
+
+```bash
+python scripts/benchmark_reports.py benchmarks/vulnerable-python-api.json examples/sample-reports/vulnerable-python-api-report.json
 ```
 
 ## Example finding
@@ -132,14 +159,16 @@ See `schemas/` and `docs/report-schema.md`.
 
 Use only on code you own or are authorized to review. Default mode is static/local review. Do not use this project to attack deployed third-party systems. See `docs/safety-policy.md` and `SECURITY.md`.
 
-## Roadmap
+## Roadmap status
 
-- SARIF export for GitHub code scanning.
-- GitHub Action for PR/diff reviews.
-- Multi-agent review mode: recon mapper, vuln analyst, remediation reviewer.
-- Optional scanner integrations: Semgrep, Bandit, npm audit, pip-audit, CodeQL.
-- Benchmarks over deliberately vulnerable demo apps.
-- Patch-review mode for verifying remediations.
+Completed roadmap items:
+
+- SARIF export for GitHub code scanning: `scripts/export_sarif.py`.
+- GitHub Action for PR/diff reviews: `.github/workflows/agentic-security-review.yml`.
+- Multi-agent review mode: `--mode multi-agent` with recon mapper, vulnerability analyst, and remediation reviewer roles.
+- Optional scanner integrations: `scripts/collect_scanner_context.py` detects Semgrep, Bandit, npm audit, pip-audit, and CodeQL availability for authorized local use.
+- Benchmarks over deliberately vulnerable demo apps: `benchmarks/vulnerable-python-api.json` plus `scripts/benchmark_reports.py`.
+- Patch-review mode for verifying remediations and PR diffs: `--mode patch-review --patch <diff>`.
 
 ## License
 

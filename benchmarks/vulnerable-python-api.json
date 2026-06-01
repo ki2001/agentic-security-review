@@ -1,0 +1,52 @@
+{
+  "name": "vulnerable-python-api",
+  "target": "examples/vulnerable-python-api",
+  "description": "Expected vulnerability classes in the deliberately vulnerable Flask demo app.",
+  "expected_findings": [
+    {
+      "id": "broken-access-control-idor",
+      "severity": "high",
+      "match_terms": [
+        "CWE-639",
+        "broken_access_control",
+        "cross-tenant",
+        "idor"
+      ]
+    },
+    {
+      "id": "path-traversal-download",
+      "severity": "high",
+      "match_terms": [
+        "path traversal",
+        "CWE-22",
+        "send_file"
+      ]
+    },
+    {
+      "id": "hardcoded-secret",
+      "severity": "medium",
+      "match_terms": [
+        "hardcoded",
+        "secret",
+        "CWE-798"
+      ]
+    },
+    {
+      "id": "debug-mode",
+      "severity": "medium",
+      "match_terms": [
+        "debug",
+        "flask"
+      ]
+    },
+    {
+      "id": "command-injection-pattern",
+      "severity": "critical",
+      "match_terms": [
+        "command injection",
+        "shell=True",
+        "CWE-78"
+      ]
+    }
+  ]
+}

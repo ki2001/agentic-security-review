@@ -29,5 +29,17 @@ The project is a maintainer-first defensive security assistant. It helps reviewe
 
 - `pytest -q` passes.
 - Sample JSON report validates against schema.
+- SARIF export CLI produces SARIF 2.1.0.
+- Roadmap feature CLIs have regression tests.
 - README explains safety boundaries and quickstart.
 - Skills include scope confirmation, reconnaissance, attack-surface mapping, evidence validation, and remediation guidance.
+
+
+## Implemented roadmap
+
+- SARIF export for GitHub code scanning and SARIF consumers.
+- GitHub Actions workflow for PR/diff review prompt artifacts.
+- Multi-agent prompt mode for recon mapping, vulnerability analysis, and remediation review.
+- Patch-review prompt mode for diffs/remediation verification.
+- Optional scanner context detection for Semgrep, Bandit, npm audit, pip-audit, and CodeQL.
+- Benchmark manifest and scoring CLI for the deliberately vulnerable demo app.
