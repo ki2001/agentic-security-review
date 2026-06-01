@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/agentic-security-review/finding.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "severity", "confidence", "category", "affected_files", "summary", "impact", "exploitability", "evidence", "recommended_fix", "suggested_tests"],
+  "properties": {
+    "id": {"type": "string"},
+    "title": {"type": "string"},
+    "severity": {"enum": ["critical", "high", "medium", "low", "informational"]},
+    "confidence": {"enum": ["high", "medium", "low"]},
+    "category": {"type": "string"},
+    "cwe": {"type": "array", "items": {"type": "string"}},
+    "owasp": {"type": "array", "items": {"type": "string"}},
+    "affected_files": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["path"], "properties": {"path": {"type": "string"}, "lines": {"type": "array", "items": {"type": "integer"}}}, "additionalProperties": false}},
+    "summary": {"type": "string"},
+    "impact": {"type": "string"},
+    "exploitability": {"type": "object", "required": ["preconditions", "attack_path", "safe_reproduction"], "properties": {"preconditions": {"type": "array", "items": {"type": "string"}}, "attack_path": {"type": "array", "items": {"type": "string"}}, "safe_reproduction": {"type": "string"}}, "additionalProperties": false},
+    "evidence": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["path", "snippet", "reasoning"], "properties": {"path": {"type": "string"}, "snippet": {"type": "string"}, "reasoning": {"type": "string"}}, "additionalProperties": false}},
+    "recommended_fix": {"type": "string"},
+    "suggested_tests": {"type": "array", "items": {"type": "string"}},
+    "references": {"type": "array", "items": {"type": "string"}}
+  }
+}

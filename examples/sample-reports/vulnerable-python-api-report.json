@@ -1,0 +1,30 @@
+{
+  "tool": "agentic-security-review",
+  "target": "examples/vulnerable-python-api",
+  "authorized": true,
+  "mode": "static",
+  "summary": "Deliberately vulnerable demo app with broken access control, path traversal, hardcoded secret, debug mode, and command injection patterns.",
+  "findings": [
+    {
+      "id": "ASR-001",
+      "title": "User-controlled org_id allows cross-tenant invoice access",
+      "severity": "high",
+      "confidence": "high",
+      "category": "broken_access_control",
+      "cwe": ["CWE-639"],
+      "owasp": ["A01:2021-Broken Access Control"],
+      "affected_files": [{"path": "examples/vulnerable-python-api/app.py", "lines": [22, 28]}],
+      "summary": "The invoice endpoint trusts org_id from the query string instead of deriving authorization from the authenticated user.",
+      "impact": "An authenticated user may retrieve invoices belonging to another organization if they know or guess invoice identifiers and organization IDs.",
+      "exploitability": {
+        "preconditions": ["Attacker can access the invoice endpoint", "Attacker can guess or enumerate invoice IDs"],
+        "attack_path": ["Authenticate as a normal user", "Request /invoices/inv_2?org_id=org_b", "Receive invoice data for org_b"],
+        "safe_reproduction": "Run only against the local deliberately vulnerable demo app with seeded demo data."
+      },
+      "evidence": [{"path": "examples/vulnerable-python-api/app.py", "snippet": "org_id = request.args.get(\"org_id\")", "reasoning": "Organization scope is taken from user-controlled query parameters and compared to invoice data rather than to the authenticated session."}],
+      "recommended_fix": "Derive org_id from current_user() or server-side session claims and enforce the invoice lookup with that trusted organization ID.",
+      "suggested_tests": ["User from org_a cannot access inv_2", "Supplying org_id in the query string is ignored"],
+      "references": ["https://cwe.mitre.org/data/definitions/639.html"]
+    }
+  ]
+}
